@@ -1,0 +1,53 @@
+/* ── PremiumLock Component ───────────────────────── */
+.premium-lock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2.5rem 2rem;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.06));
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  border-radius: 1rem;
+  min-height: 180px;
+}
+
+.premium-lock__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.premium-lock__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+}
+
+.premium-lock__desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 340px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.premium-lock__btn {
+  margin-top: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.premium-lock__btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

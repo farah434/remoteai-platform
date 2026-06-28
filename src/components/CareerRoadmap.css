@@ -1,0 +1,328 @@
+/* CareerRoadmap.css */
+
+.cr-container {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 22px 24px;
+  font-family: Inter, system-ui, sans-serif;
+  color: #f4f4f5;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Loading */
+.cr-loading {
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 16px;
+  color: #71717a;
+  font-size: 0.9rem;
+}
+.cr-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #27272a;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: cr-spin 0.8s linear infinite;
+}
+@keyframes cr-spin { to { transform: rotate(360deg); } }
+
+/* Error state */
+.cr-error-state {
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  gap: 12px;
+  text-align: center;
+  color: #71717a;
+}
+.cr-error-icon { font-size: 2rem; }
+.cr-retry-btn {
+  padding: 8px 20px;
+  background: #312e81;
+  border: 1px solid #6366f1;
+  color: #a5b4fc;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cr-retry-btn:hover { background: #3730a3; }
+
+/* Header */
+.cr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cr-header-icon { font-size: 1.5rem; }
+.cr-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f4f4f5;
+}
+.cr-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #71717a;
+}
+.cr-refresh-btn {
+  background: none;
+  border: 1px solid #3f3f46;
+  color: #71717a;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cr-refresh-btn:hover { color: #6366f1; border-color: #6366f1; }
+
+/* Headline card */
+.cr-headline-card {
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  border: 1px solid #4338ca;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.cr-headline-text {
+  margin: 0 0 12px;
+  font-size: 0.925rem;
+  color: #e0e7ff;
+  line-height: 1.55;
+}
+.cr-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cr-level-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+.cr-target-role {
+  font-size: 0.82rem;
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+/* Sections */
+.cr-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cr-section-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Quick wins */
+.cr-quick-wins {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cr-quick-win-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #052e16;
+  border: 1px solid #065f46;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  color: #6ee7b7;
+  line-height: 1.45;
+}
+.cr-check {
+  color: #10b981;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Phase tabs */
+.cr-phase-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cr-phase-tab {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  background: #27272a;
+  color: #71717a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cr-phase-tab--active {
+  background: #312e81;
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+.cr-phase-tab:hover:not(.cr-phase-tab--active) {
+  border-color: #52525b;
+  color: #d4d4d8;
+}
+
+/* Phase card */
+.cr-phase-card {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 15px 16px;
+}
+.cr-phase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cr-phase-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e4e4e7;
+}
+.cr-phase-duration {
+  font-size: 0.75rem;
+  background: #1e293b;
+  color: #60a5fa;
+  border: 1px solid #1e3a5f;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.cr-phase-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cr-phase-tasks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #d4d4d8;
+  line-height: 1.45;
+}
+.cr-task-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6366f1;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+/* Skill chips */
+.cr-skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.cr-skill-chip {
+  background: #27272a;
+  border: 1px solid #4c1d95;
+  color: #a78bfa;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+/* Salary card */
+.cr-salary-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #1c1917;
+  border: 1px solid #78350f;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.cr-salary-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+.cr-salary-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+.cr-salary-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+
+/* Resources */
+.cr-resources {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cr-resource-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 9px;
+  padding: 10px 14px;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cr-resource-chip:hover {
+  border-color: #6366f1;
+  background: #1e1b4b;
+}
+.cr-resource-type {
+  font-size: 0.7rem;
+  background: #312e81;
+  color: #a5b4fc;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cr-resource-name {
+  font-size: 0.875rem;
+  color: #d4d4d8;
+  font-weight: 500;
+  flex: 1;
+}
+.cr-resource-arrow {
+  color: #6366f1;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}

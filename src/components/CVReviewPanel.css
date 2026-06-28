@@ -1,0 +1,395 @@
+/* CVReviewPanel.css */
+
+.cvr-container {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 16px;
+  padding: 22px 24px;
+  font-family: Inter, system-ui, sans-serif;
+  color: #f4f4f5;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 760px;
+  width: 100%;
+}
+
+/* Header */
+.cvr-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cvr-header-icon { font-size: 1.5rem; }
+.cvr-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f4f4f5;
+}
+.cvr-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #71717a;
+}
+
+/* Input area */
+.cvr-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cvr-role-input {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 9px;
+  padding: 10px 14px;
+  color: #f4f4f5;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cvr-role-input:focus { border-color: #6366f1; }
+.cvr-role-input::placeholder { color: #52525b; }
+
+.cvr-textarea {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #f4f4f5;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+  min-height: 180px;
+}
+.cvr-textarea:focus { border-color: #6366f1; }
+.cvr-textarea::placeholder { color: #52525b; }
+
+.cvr-error {
+  font-size: 0.82rem;
+  color: #f87171;
+  margin: 0;
+}
+
+.cvr-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 24px;
+  background: #4f46e5;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.17s, transform 0.1s;
+  align-self: flex-start;
+}
+.cvr-submit-btn:hover:not(:disabled) { background: #4338ca; }
+.cvr-submit-btn:active:not(:disabled) { transform: scale(0.97); }
+.cvr-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.cvr-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #818cf8;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cvr-spin 0.7s linear infinite;
+}
+@keyframes cvr-spin { to { transform: rotate(360deg); } }
+
+/* Results */
+.cvr-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Score row */
+.cvr-score-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.cvr-score-ring {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: conic-gradient(var(--score-color) calc(var(--score-color, 1) * 1%), #27272a 0%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px #18181b, 0 0 0 4px var(--score-color);
+  background: radial-gradient(circle, #27272a 55%, transparent 55%),
+              conic-gradient(var(--score-color) 0%, #27272a 0%);
+}
+/* Simpler approach: just style as a round badge */
+.cvr-score-ring {
+  background: #27272a;
+  border: 3px solid var(--score-color);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--score-color) 30%, transparent);
+}
+.cvr-score-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--score-color);
+  line-height: 1;
+}
+.cvr-score-label {
+  font-size: 0.65rem;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.cvr-score-meta {
+  flex: 1;
+  min-width: 0;
+}
+.cvr-summary {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #d4d4d8;
+  line-height: 1.55;
+}
+.cvr-retry-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cvr-retry-btn:hover { color: #f4f4f5; border-color: #71717a; }
+
+/* Tabs */
+.cvr-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #27272a;
+  padding-bottom: 2px;
+}
+.cvr-tab {
+  padding: 6px 14px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid transparent;
+  background: none;
+  color: #71717a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.cvr-tab:hover:not(.cvr-tab--active) { color: #d4d4d8; background: #27272a; }
+.cvr-tab--active {
+  background: #1e1b4b;
+  border-color: #4338ca;
+  color: #a5b4fc;
+}
+
+/* Tab panels */
+.cvr-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Generic card */
+.cvr-card {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cvr-card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #71717a;
+}
+
+.cvr-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Lists */
+.cvr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cvr-list li {
+  font-size: 0.865rem;
+  color: #d4d4d8;
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.45;
+}
+.cvr-list li::before { content: "›"; position: absolute; left: 0; color: #6366f1; font-weight: 700; }
+.cvr-strengths .cvr-list li::before { color: #10b981; }
+.cvr-weaknesses .cvr-list li::before { color: #ef4444; }
+
+.cvr-ordered-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cvr-ordered-list li {
+  font-size: 0.865rem;
+  color: #d4d4d8;
+  line-height: 1.45;
+}
+
+.cvr-empty {
+  font-size: 0.85rem;
+  color: #52525b;
+  margin: 0;
+}
+
+/* Skill chips */
+.cvr-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cvr-chip {
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 4px 11px;
+  border: 1px solid;
+}
+.cvr-chip--found {
+  background: #052e16;
+  color: #34d399;
+  border-color: #065f46;
+}
+.cvr-chip--missing {
+  background: #1f0a0a;
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+.cvr-missing-card { background: #1a0a0a; border-color: #3f1818; }
+
+/* Roles grid */
+.cvr-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.cvr-role-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 9px;
+  padding: 11px 14px;
+  transition: border-color 0.15s;
+}
+.cvr-role-card:hover { border-color: #6366f1; }
+.cvr-role-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #312e81;
+  color: #a5b4fc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cvr-role-name {
+  font-size: 0.875rem;
+  color: #e4e4e7;
+  font-weight: 500;
+}
+
+/* Priorities */
+.cvr-priorities {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cvr-priority-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 9px;
+  padding: 11px 13px;
+}
+.cvr-priority-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #6366f1;
+  background: #1e1b4b;
+  border-radius: 6px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.cvr-priority-content { flex: 1; }
+.cvr-priority-action {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #d4d4d8;
+  line-height: 1.45;
+}
+.cvr-impact-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 2px 9px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+/* Career card */
+.cvr-career-card { background: #0a1628; border-color: #1e3a5f; }
+.cvr-career-card .cvr-card-label { color: #60a5fa; }
+.cvr-career-card .cvr-list li::before { color: #60a5fa; }
+.cvr-career-card .cvr-list li { color: #93c5fd; }
+
+@media (max-width: 540px) {
+  .cvr-two-col { grid-template-columns: 1fr; }
+  .cvr-roles-grid { grid-template-columns: 1fr; }
+  .cvr-tabs { gap: 4px; }
+  .cvr-tab { font-size: 0.76rem; padding: 5px 10px; }
+}
