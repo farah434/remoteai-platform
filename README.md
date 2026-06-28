@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # RemoteAI — AI-Powered Remote Jobs Platform
 
 > Full-stack job platform with AI skill matching, career mentoring, and CV analysis.
@@ -92,3 +93,7 @@ node server.js
 - **Accent**: Indigo (#6366f1) + Pink gradient
 - **Typography**: Inter system font
 - **Fully responsive** — mobile + desktop
+=======
+# remoteai-platform
+AI-powered remote jobs platform with smart job matching, CV analysis, career roadmap, and AI career recommendations.
+>>>>>>> fc314ff6de32772bd065aead65ef69c8ebfa9e3c
