@@ -14,12 +14,18 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 
 dotenv.config();
+
 dns.setDefaultResultOrder('ipv4first');
 dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: '2mb' })); // Allow larger CV text payloads
+
+app.use(cors({
+  origin: "https://remoteai-platform.vercel.app",
+  credentials: true
+}));
+
+app.use(express.json({ limit: '2mb' }));
 
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'remoteai_dev_secret';
