@@ -21,7 +21,18 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 const app = express();
 
 app.use(cors({
-  origin: "https://remoteai-platform.vercel.app",
+  origin: function (origin, callback) {
+    const allowed = [
+      'https://remoteai-platform.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ];
+    if (!origin || allowed.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked: ' + origin));
+    }
+  },
   credentials: true
 }));
 
