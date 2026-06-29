@@ -29,7 +29,7 @@ app.use(express.json({ limit: '2mb' }));
 
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'remoteai_dev_secret';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/remoteai';
+const MONGO_URI = process.env.MONGO_URI;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
