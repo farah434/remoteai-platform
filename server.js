@@ -203,18 +203,51 @@ app.put('/api/auth/profile', auth, async (req, res) => {
 
 app.get('/api/jobs', async (req, res) => {
   try {
-    const { type, level, search } = req.query;
-    const filter = { active: true };
+    const { type, level, search, category } = req.query;
+
+    // Only serve real API jobs — never expose seed/demo data to users
+    const filter = {
+      active: true,
+      source: 'api',
+      externalId: { $ne: null },
+      applyUrl: { $ne: null },
+    };
+
     if (type) filter.type = type;
     if (level) filter.level = level;
-    if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { company: { $regex: search, $options: 'i' } },
-        { skills: { $elemMatch: { $regex: search, $options: 'i' } } },
-      ];
+
+    if (category && category !== 'all') {
+      const catKeywords = CATEGORY_KEYWORDS[category] || [];
+      if (catKeywords.length > 0) {
+        const catRegex = catKeywords.map(k => new RegExp(k, 'i'));
+        filter.$or = [
+          { title: { $in: catRegex } },
+          { tags: { $in: catRegex } },
+          { skills: { $in: catRegex } },
+        ];
+      }
     }
-    const jobs = await Job.find(filter).sort({ posted: -1 });
+
+    if (search) {
+      const sq = { $regex: search, $options: 'i' };
+      const searchConditions = [
+        { title: sq },
+        { company: sq },
+        { skills: { $elemMatch: sq } },
+        { tags: { $elemMatch: sq } },
+      ];
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchConditions }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchConditions;
+      }
+    }
+
+    const jobs = await Job.find(filter)
+      .sort({ posted: -1, lastFetched: -1 })
+      .limit(200);
+
     res.json(jobs);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -223,7 +256,7 @@ app.get('/api/jobs', async (req, res) => {
 app.get('/api/jobs/matches', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    const jobs = await Job.find({ active: true });
+    const jobs = await Job.find({ active: true, source: 'api', externalId: { $ne: null }, applyUrl: { $ne: null } });
     const userSkills = (user.skills || []).map(s => s.toLowerCase().trim());
 
     // --- Base score calculation (same as Phase 5) ---
@@ -625,6 +658,40 @@ Return ONLY a JSON object:
 // Colour palette cycled for API jobs that have no branding
 const LOGO_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#14b8a6', '#f97316'];
 
+// Category keyword map used by GET /api/jobs?category=X to filter by domain
+const CATEGORY_KEYWORDS = {
+  'software-dev':    ['developer', 'engineer', 'software', 'fullstack', 'backend', 'frontend', 'node', 'react', 'python', 'java', 'ruby', 'golang', 'php', 'typescript'],
+  'ai-data':         ['data', 'analyst', 'machine learning', 'ai', 'ml', 'data science', 'nlp', 'llm', 'analytics', 'tensorflow', 'pytorch'],
+  'design':          ['design', 'ux', 'ui', 'figma', 'product designer', 'graphic', 'motion', 'visual'],
+  'writing':         ['writer', 'content', 'copywriter', 'editor', 'technical writer', 'documentation', 'blog'],
+  'marketing':       ['marketing', 'growth', 'seo', 'social media', 'email marketing', 'brand', 'campaign', 'ads', 'ppc'],
+  'customer-support':['support', 'customer success', 'customer service', 'helpdesk', 'zendesk', 'account manager'],
+  'virtual-assistant':['virtual assistant', 'executive assistant', 'administrative', 'va ', 'admin'],
+  'sales':           ['sales', 'account executive', 'business development', 'bdr', 'sdr', 'revenue'],
+  'finance':         ['finance', 'accounting', 'bookkeeper', 'cfo', 'controller', 'financial analyst', 'tax'],
+  'education':       ['teacher', 'tutor', 'instructor', 'education', 'elearning', 'curriculum', 'trainer'],
+  'devops':          ['devops', 'sre', 'infrastructure', 'cloud', 'aws', 'kubernetes', 'docker', 'cicd', 'platform engineer'],
+  'qa-testing':      ['qa', 'quality assurance', 'tester', 'test engineer', 'automation test', 'sdet'],
+  'product':         ['product manager', 'product owner', 'scrum master', 'agile coach', 'pm '],
+  'cybersecurity':   ['security', 'infosec', 'penetration', 'soc analyst', 'cybersecurity', 'devsecops'],
+};
+
+// Remotive API category slugs to fetch — covers the full job market
+const REMOTIVE_CATEGORIES = [
+  'software-dev',
+  'devops-sysadmin',
+  'data',
+  'design',
+  'writing',
+  'marketing',
+  'customer-support',
+  'sales',
+  'finance-legal',
+  'product',
+  'hr',
+  'qa',
+];
+
 /**
  * Map a Remotive job category + title to our skill tags.
  * This is intentionally broad so the AI matching engine has signal to work with.
@@ -702,27 +769,29 @@ function logoFromCompany(company, index) {
 }
 
 /**
- * Fetch up to `limit` jobs from Remotive, upsert into MongoDB, and return a summary.
- * Jobs are deduplicated by externalId (Remotive's numeric job id cast to string).
+ * Fetch jobs from Remotive for a single category and upsert into MongoDB.
+ * Only jobs with a valid company name, title, and apply URL are stored.
  * Seed jobs (source:'seed') are never touched.
  */
-async function fetchRemoteJobs({ limit = 50, category = '' } = {}) {
+async function fetchCategoryJobs(remotiveCategory, limitPerCategory = 25) {
   const REMOTIVE_URL = 'https://remotive.com/api/remote-jobs';
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (category) params.set('category', category);
+  const params = new URLSearchParams({
+    limit: String(limitPerCategory),
+    ...(remotiveCategory ? { category: remotiveCategory } : {}),
+  });
 
   let remotiveJobs;
   try {
     const response = await fetch(`${REMOTIVE_URL}?${params}`, {
       headers: { 'Accept': 'application/json', 'User-Agent': 'RemoteAI-Platform/1.0' },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
-    if (!response.ok) throw new Error(`Remotive API responded with status ${response.status}`);
+    if (!response.ok) throw new Error(`Remotive API ${response.status}`);
     const data = await response.json();
     remotiveJobs = data.jobs || [];
   } catch (err) {
-    console.error('[Jobs] Remotive fetch failed:', err.message);
-    return { success: false, error: err.message, fetched: 0, inserted: 0, updated: 0 };
+    console.warn(`[Jobs] Category "${remotiveCategory}" fetch failed: ${err.message}`);
+    return { success: false, fetched: 0, inserted: 0, updated: 0 };
   }
 
   let inserted = 0;
@@ -730,24 +799,30 @@ async function fetchRemoteJobs({ limit = 50, category = '' } = {}) {
 
   for (let i = 0; i < remotiveJobs.length; i++) {
     const r = remotiveJobs[i];
+
+    // Quality gate: skip jobs missing essential real data
+    if (!r.id || !r.company_name || !r.title || !r.url) continue;
+    // Skip jobs where the apply URL is just the Remotive homepage
+    if (r.url === 'https://remotive.com') continue;
+
     const externalId = String(r.id);
     const skills = deriveSkills(r.title, r.category || '', r.tags || []);
-    const { logo, logoColor } = logoFromCompany(r.company_name || 'Remote Co', i);
+    const { logo, logoColor } = logoFromCompany(r.company_name, i);
 
-    // Strip HTML tags from description for clean text storage
     const description = (r.description || '')
       .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 1000);
+      .slice(0, 1500);
 
     const jobDoc = {
-      title: r.title || 'Remote Position',
-      company: r.company_name || 'Remote Company',
+      title: r.title,
+      company: r.company_name,
       logo,
       logoColor,
       type: normalizeType(r.job_type),
-      level: inferLevel(r.title || ''),
+      level: inferLevel(r.title),
       remote: true,
       salary: r.salary || '',
       location: r.candidate_required_location || 'Worldwide',
@@ -758,7 +833,7 @@ async function fetchRemoteJobs({ limit = 50, category = '' } = {}) {
       active: true,
       source: 'api',
       externalId,
-      applyUrl: r.url || null,
+      applyUrl: r.url,
       lastFetched: new Date(),
     };
 
@@ -772,8 +847,28 @@ async function fetchRemoteJobs({ limit = 50, category = '' } = {}) {
     else if (result.modifiedCount > 0) updated++;
   }
 
-  console.log(`[Jobs] Remotive sync — fetched: ${remotiveJobs.length}, inserted: ${inserted}, updated: ${updated}`);
   return { success: true, fetched: remotiveJobs.length, inserted, updated };
+}
+
+/**
+ * Full sync: fetch jobs from all Remotive categories in sequence.
+ * Returns aggregate stats. Non-blocking — individual category failures are skipped.
+ */
+async function fetchRemoteJobs({ limit = 25, category = '' } = {}) {
+  const categoriesToFetch = category ? [category] : REMOTIVE_CATEGORIES;
+  let totalFetched = 0, totalInserted = 0, totalUpdated = 0;
+
+  for (const cat of categoriesToFetch) {
+    const r = await fetchCategoryJobs(cat, limit);
+    totalFetched  += r.fetched  || 0;
+    totalInserted += r.inserted || 0;
+    totalUpdated  += r.updated  || 0;
+    // Small delay between categories to be respectful to the API
+    await new Promise(resolve => setTimeout(resolve, 800));
+  }
+
+  console.log(`[Jobs] Full sync complete — categories: ${categoriesToFetch.length}, fetched: ${totalFetched}, inserted: ${totalInserted}, updated: ${totalUpdated}`);
+  return { success: true, fetched: totalFetched, inserted: totalInserted, updated: totalUpdated };
 }
 
 // ── POST /api/jobs/refresh ─────────────────────
@@ -782,17 +877,19 @@ async function fetchRemoteJobs({ limit = 50, category = '' } = {}) {
 // Requires auth to prevent abuse.
 app.post('/api/jobs/refresh', auth, async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.body?.limit) || 50, 100); // max 100 per call
-    const category = req.body?.category || '';
+    // limit = jobs per category (max 50). category = specific Remotive slug, or empty for all.
+    const limit = Math.min(parseInt(req.body?.limit) || 25, 50);
+    const category = req.body?.category || ''; // e.g. "software-dev", "design", etc.
     const result = await fetchRemoteJobs({ limit, category });
     if (!result.success) {
       return res.status(502).json({
-        error: 'Could not reach Remotive API. Seed jobs are still available.',
+        error: 'Could not reach Remotive API.',
         detail: result.error,
       });
     }
+    const catLabel = category || 'all categories';
     res.json({
-      message: `Job sync complete — ${result.inserted} new jobs added, ${result.updated} updated.`,
+      message: `Sync complete for ${catLabel} — ${result.inserted} new jobs, ${result.updated} updated.`,
       ...result,
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -930,13 +1027,16 @@ mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 15000, family: 4 })
       console.log('');
     });
 
-    // Phase 6 Part 2A: fetch live jobs from Remotive on startup (non-blocking).
-    // If the API is down, seed jobs remain as fallback — server still starts normally.
-    console.log('[Jobs] Starting initial Remotive sync...');
-    fetchRemoteJobs({ limit: 50 })
+    // Fetch real jobs from all Remotive categories on startup (non-blocking).
+    // Seed jobs are excluded from the API — only verified API jobs are served.
+    console.log('[Jobs] Starting multi-category Remotive sync...');
+    fetchRemoteJobs({ limit: 25 }) // 25 per category × 12 categories = up to 300 real jobs
       .then(r => {
-        if (r.success) console.log(`[Jobs] Startup sync done — ${r.inserted} new, ${r.updated} updated.`);
-        else console.warn('[Jobs] Startup sync skipped (Remotive unavailable) — seed jobs active.');
+        if (r.success) {
+          console.log(`[Jobs] Startup sync complete — ${r.inserted} new jobs, ${r.updated} updated across all categories.`);
+        } else {
+          console.warn('[Jobs] Startup sync failed — check Remotive API connectivity.');
+        }
       })
       .catch(err => console.warn('[Jobs] Startup sync error:', err.message));
   })

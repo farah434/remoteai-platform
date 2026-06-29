@@ -1,318 +1,303 @@
-/**
- * Jobs.jsx — Updated with Search & Filters (Phase 6 Part 3B)
- * Frontend-only filtering — no backend changes.
- * AI match score, JobCard and JobModal integrations preserved.
- */
-import { useState, useEffect, useMemo } from "react";
-import JobCard from "../components/JobCard";
-import JobModal from "../components/JobModal";
+import { useState, useMemo, useEffect } from 'react';
+import JobCard from '../components/JobCard';
+import JobModal from '../components/JobModal';
 import { useAuth } from '../context/AuthContext';
-import { calculateMatchScore } from "../utils/matching";
-import "./Jobs.css";
+import { jobsAPI } from '../services/api';
+import { rankJobsByMatch } from '../utils/matching';
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const TYPES  = ['full-time', 'part-time', 'contract', 'freelance'];
+const LEVELS = ['beginner', 'mid', 'senior'];
 
-const JOB_TYPES = ["full-time", "part-time", "contract", "freelance"];
-const LEVELS    = ["beginner", "mid", "senior"];
 const CATEGORIES = [
-  "All",
-  "Engineering",
-  "Design",
-  "Data",
-  "Marketing",
-  "Writing",
-  "Support",
-  "DevOps",
-  "Management",
+  { id: 'all',              label: 'All Categories',    icon: '🌐' },
+  { id: 'software-dev',     label: 'Software Dev',      icon: '💻' },
+  { id: 'ai-data',          label: 'AI & Data',         icon: '🤖' },
+  { id: 'design',           label: 'Design',            icon: '🎨' },
+  { id: 'devops',           label: 'DevOps',            icon: '⚙️' },
+  { id: 'writing',          label: 'Writing',           icon: '✍️' },
+  { id: 'marketing',        label: 'Marketing',         icon: '📣' },
+  { id: 'customer-support', label: 'Support',           icon: '💬' },
+  { id: 'virtual-assistant',label: 'Virtual Assistant', icon: '🗂' },
+  { id: 'sales',            label: 'Sales',             icon: '📈' },
+  { id: 'finance',          label: 'Finance',           icon: '💰' },
+  { id: 'education',        label: 'Education',         icon: '📚' },
+  { id: 'qa-testing',       label: 'QA & Testing',      icon: '🧪' },
+  { id: 'cybersecurity',    label: 'Security',          icon: '🔐' },
+  { id: 'product',          label: 'Product',           icon: '📦' },
 ];
 
-// Map category label → keywords present in title/tags/skills
-const CATEGORY_KEYWORDS = {
-  Engineering: ["developer", "engineer", "frontend", "backend", "fullstack", "full stack", "react", "node", "javascript", "python", "java", "php", "ios", "android", "mobile"],
-  Design:      ["design", "ui", "ux", "figma", "illustrator", "photoshop", "graphic", "creative"],
-  Data:        ["data", "analyst", "analytics", "science", "scientist", "ml", "machine learning", "ai", "sql", "pandas"],
-  Marketing:   ["marketing", "seo", "social media", "growth", "ads", "ppc", "brand", "campaign"],
-  Writing:     ["writer", "writing", "content", "copywriter", "blog", "editor", "technical writer"],
-  Support:     ["support", "customer", "help desk", "service", "zendesk", "success"],
-  DevOps:      ["devops", "docker", "kubernetes", "aws", "gcp", "azure", "cloud", "ci/cd", "infrastructure", "sre"],
-  Management:  ["manager", "lead", "head", "director", "vp", "product", "project", "scrum", "agile", "cto"],
+// Client-side category keyword map mirrors the backend's CATEGORY_KEYWORDS
+const CAT_KEYWORDS = {
+  'software-dev':    ['developer','engineer','software','fullstack','backend','frontend','node','react','python','java','ruby','golang','php','typescript'],
+  'ai-data':         ['data','analyst','machine learning','ai','ml','data science','nlp','analytics','tensorflow'],
+  'design':          ['design','ux','ui','figma','graphic','motion','visual'],
+  'writing':         ['writer','content','copywriter','editor','technical writer','documentation','blog'],
+  'marketing':       ['marketing','growth','seo','social media','email marketing','brand','campaign','ads','ppc'],
+  'customer-support':['support','customer success','customer service','helpdesk','zendesk'],
+  'virtual-assistant':['virtual assistant','executive assistant','administrative','admin'],
+  'sales':           ['sales','account executive','business development','bdr','sdr','revenue'],
+  'finance':         ['finance','accounting','bookkeeper','financial analyst','tax'],
+  'education':       ['teacher','tutor','instructor','education','elearning','curriculum'],
+  'devops':          ['devops','sre','infrastructure','cloud','aws','kubernetes','docker','platform engineer'],
+  'qa-testing':      ['qa','quality assurance','tester','test engineer','automation test','sdet'],
+  'product':         ['product manager','product owner','scrum','agile','pm'],
+  'cybersecurity':   ['security','infosec','penetration','soc','cybersecurity'],
 };
 
-function matchesCategory(job, category) {
-  if (category === "All" || !category) return true;
-  const keywords = CATEGORY_KEYWORDS[category] || [];
-  const haystack = [
-    job.title || "",
-    ...(job.tags || []),
-    ...(job.skills || []),
-    job.description || "",
-  ].join(" ").toLowerCase();
-  return keywords.some((kw) => haystack.includes(kw));
-}
-
 export default function Jobs() {
-  const { user } = useAuth(); {};
-  const userSkills = user?.skills || {};
+  const { user } = useAuth();
+  const [jobs, setJobs]             = useState([]);
+  const [loadingJobs, setLoading]   = useState(true);
+  const [selectedJob, setSelected]  = useState(null);
+  const [search, setSearch]         = useState('');
+  const [filterTypes, setFilterTypes]   = useState([]);
+  const [filterLevels, setFilterLevels] = useState([]);
+  const [activeCategory, setCategory]   = useState('all');
+  const [aiSort, setAiSort]         = useState(!!user?.skills?.length);
+  const [syncStatus, setSyncStatus] = useState(null); // { apiJobs, lastSynced }
 
-  const [allJobs, setAllJobs]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState("");
-  const [selectedJob, setSelectedJob] = useState(null);
-
-  // Filter state
-  const [search, setSearch]         = useState("");
-  const [category, setCategory]     = useState("All");
-  const [level, setLevel]           = useState("");
-  const [type, setType]             = useState("");
-  const [remoteOnly, setRemoteOnly] = useState(false);
-  const [sortBy, setSortBy]         = useState("match"); // "match" | "recent"
-
-  // Fetch all jobs once (no backend filters — frontend filtering)
   useEffect(() => {
-    const fetchJobs = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/api/jobs?limit=200`);
-        if (!res.ok) throw new Error("Failed to load jobs");
-        const data = await res.json();
-        const jobs = Array.isArray(data) ? data : data.jobs || [];
-        // Attach AI match score
-        const withScore = jobs.map((job) => ({
-          ...job,
-          id: job._id || job.id,
-          matchScore: calculateMatchScore(userSkills, job.skills || []),
-        }));
-        setAllJobs(withScore);
-      } catch (e) {
-        setError("Could not load jobs. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchJobs();
+    setLoading(true);
+    // Fetch API jobs only — backend already filters source:'api'
+    jobsAPI.list()
+      .then(data => {
+        // Client-side double-guard: only show jobs with a real externalId and applyUrl
+        const verified = (data || []).filter(j => j.source === 'api' && j.externalId && j.applyUrl);
+        setJobs(verified);
+      })
+      .catch(err => {
+        console.error('Failed to load jobs:', err);
+        setJobs([]);
+      })
+      .finally(() => setLoading(false));
+
+    // Fetch sync status for the banner
+    fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/jobs/sync-status')
+      .then(r => r.json())
+      .then(d => setSyncStatus(d))
+      .catch(() => {});
   }, []);
 
-  // Re-score when user skills change
-  const scoredJobs = useMemo(() =>
-    allJobs.map((job) => ({
-      ...job,
-      matchScore: calculateMatchScore(userSkills, job.skills || []),
-    })),
-    [allJobs, userSkills]
-  );
+  const toggle = (arr, setArr, val) =>
+    setArr(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
 
-  // Apply all frontend filters
   const filteredJobs = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    let list = [...jobs];
 
-    let result = scoredJobs.filter((job) => {
-      // Search
-      if (q) {
-        const haystack = [
-          job.title, job.company,
-          ...(job.tags || []),
-          ...(job.skills || []),
-        ].join(" ").toLowerCase();
-        if (!haystack.includes(q)) return false;
+    // Category filter (client-side, matches backend logic)
+    if (activeCategory !== 'all') {
+      const kws = CAT_KEYWORDS[activeCategory] || [];
+      if (kws.length > 0) {
+        list = list.filter(j => {
+          const haystack = `${j.title} ${(j.tags || []).join(' ')} ${(j.skills || []).join(' ')}`.toLowerCase();
+          return kws.some(kw => haystack.includes(kw));
+        });
       }
-      // Category
-      if (!matchesCategory(job, category)) return false;
-      // Level
-      if (level && job.level !== level) return false;
-      // Type
-      if (type && job.type !== type) return false;
-      // Remote only
-      if (remoteOnly && !job.remote) return false;
-
-      return true;
-    });
-
-    // Sort
-    if (sortBy === "match") {
-      result = [...result].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-    } else {
-      result = [...result].sort((a, b) => new Date(b.posted) - new Date(a.posted));
     }
 
-    return result;
-  }, [scoredJobs, search, category, level, type, remoteOnly, sortBy]);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(j =>
+        j.title?.toLowerCase().includes(q) ||
+        j.company?.toLowerCase().includes(q) ||
+        j.tags?.some(t => t.toLowerCase().includes(q)) ||
+        j.skills?.some(s => s.toLowerCase().includes(q))
+      );
+    }
 
-  const clearFilters = () => {
-    setSearch("");
-    setCategory("All");
-    setLevel("");
-    setType("");
-    setRemoteOnly(false);
-    setSortBy("match");
+    if (filterTypes.length)  list = list.filter(j => filterTypes.includes(j.type));
+    if (filterLevels.length) list = list.filter(j => filterLevels.includes(j.level));
+
+    if (aiSort && user?.skills?.length) {
+      list = rankJobsByMatch(list, user.skills);
+    }
+
+    return list;
+  }, [jobs, search, filterTypes, filterLevels, activeCategory, aiSort, user]);
+
+  const clearAll = () => {
+    setFilterTypes([]); setFilterLevels([]);
+    setSearch(''); setCategory('all');
   };
 
-  const hasActiveFilters =
-    search || category !== "All" || level || type || remoteOnly || sortBy !== "match";
+  const hasFilters = filterTypes.length > 0 || filterLevels.length > 0 || search || activeCategory !== 'all';
 
   return (
-    <div className="jobs-page">
-      {/* ── Page header ── */}
-      <div className="jobs-page-header">
-        <div>
-          <h1 className="jobs-page-title">Remote Jobs</h1>
-          <p className="jobs-page-sub">
-            {loading ? "Loading…" : `${filteredJobs.length} job${filteredJobs.length !== 1 ? "s" : ""} found`}
-          </p>
-        </div>
+    <div className="page">
+      {/* Page header */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 className="page-title">Remote Jobs</h1>
+        <p className="page-sub">
+          {loadingJobs
+            ? 'Loading verified jobs…'
+            : `${filteredJobs.length} verified remote jobs${activeCategory !== 'all' ? ` in ${CATEGORIES.find(c => c.id === activeCategory)?.label}` : ''}`}
+          {user?.skills?.length && aiSort ? ' — sorted by AI match score' : ''}
+        </p>
       </div>
 
-      {/* ── Search bar ── */}
-      <div className="jobs-search-row">
-        <div className="jobs-search-wrap">
-          <svg className="jobs-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="8.5" cy="8.5" r="5.5" />
-            <path d="M17 17l-4-4" strokeLinecap="round" />
-          </svg>
-          <input
-            className="jobs-search-input"
-            type="text"
-            placeholder="Search jobs, companies, or skills…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button className="jobs-search-clear" onClick={() => setSearch("")}>✕</button>
-          )}
+      {/* Verified API banner */}
+      {!loadingJobs && syncStatus && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 16px', marginBottom: 20,
+          background: 'rgba(16,185,129,0.07)',
+          border: '1px solid rgba(16,185,129,0.2)',
+          borderRadius: 10, fontSize: 13,
+        }}>
+          <span style={{ color: 'var(--green)', fontSize: 16 }}>✓</span>
+          <span style={{ color: 'var(--text2)' }}>
+            <strong style={{ color: 'var(--green)' }}>{syncStatus.apiJobs || jobs.length} verified API jobs</strong>
+            {' '}from real companies via Remotive
+            {syncStatus.lastSynced && (
+              <span style={{ color: 'var(--text3)', marginLeft: 8 }}>
+                · Last updated {new Date(syncStatus.lastSynced).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </span>
         </div>
-
-        <div className="jobs-sort-wrap">
-          <label className="jobs-sort-label">Sort</label>
-          <select
-            className="jobs-select"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="match">Best Match</option>
-            <option value="recent">Most Recent</option>
-          </select>
-        </div>
-      </div>
-
-      {/* ── Filter bar ── */}
-      <div className="jobs-filter-bar">
-        {/* Category pills */}
-        <div className="jobs-filter-group">
-          <span className="jobs-filter-group-label">Category</span>
-          <div className="jobs-pills">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                className={`jobs-pill ${category === cat ? "jobs-pill--active" : ""}`}
-                onClick={() => setCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Row of select filters */}
-        <div className="jobs-filter-row">
-          <div className="jobs-filter-item">
-            <label className="jobs-filter-label">Level</label>
-            <select
-              className="jobs-select"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-            >
-              <option value="">All Levels</option>
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {l.charAt(0).toUpperCase() + l.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="jobs-filter-item">
-            <label className="jobs-filter-label">Job Type</label>
-            <select
-              className="jobs-select"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-            >
-              <option value="">All Types</option>
-              {JOB_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <label className="jobs-remote-toggle">
-            <input
-              type="checkbox"
-              checked={remoteOnly}
-              onChange={(e) => setRemoteOnly(e.target.checked)}
-            />
-            <span className="jobs-remote-box">
-              <span className="jobs-remote-check">✓</span>
-            </span>
-            Remote Only
-          </label>
-
-          {hasActiveFilters && (
-            <button className="jobs-clear-btn" onClick={clearFilters}>
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Job list ── */}
-      <div className="jobs-content">
-        {loading && (
-          <div className="jobs-state-center">
-            <div className="jobs-spinner" />
-            <p>Loading jobs…</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="jobs-state-center jobs-error">
-            <span>⚠️</span>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && filteredJobs.length === 0 && (
-          <div className="jobs-state-center jobs-empty">
-            <span className="jobs-empty-icon">🔍</span>
-            <p>No jobs match your filters.</p>
-            <button className="jobs-clear-btn jobs-clear-btn--lg" onClick={clearFilters}>
-              Clear Filters
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && filteredJobs.length > 0 && (
-          <div className="jobs-grid">
-            {filteredJobs.map((job) => (
-              <JobCard
-                key={job.id || job._id}
-                job={job}
-                matchScore={job.matchScore}
-                onClick={() => setSelectedJob(job)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Job modal ── */}
-      {selectedJob && (
-        <JobModal
-          job={selectedJob}
-          onClose={() => setSelectedJob(null)}
-          userSkills={userSkills}
-        />
       )}
+
+      {/* Category pills */}
+      <div style={{
+        display: 'flex', gap: 6, flexWrap: 'wrap',
+        marginBottom: 20, paddingBottom: 16,
+        borderBottom: '1px solid var(--border)',
+      }}>
+        {CATEGORIES.map(cat => (
+          <button key={cat.id}
+            onClick={() => setCategory(cat.id)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '5px 12px', borderRadius: 99, fontSize: 13,
+              cursor: 'pointer',
+              background: activeCategory === cat.id ? 'var(--accent)' : 'var(--bg2)',
+              color:      activeCategory === cat.id ? 'white' : 'var(--text2)',
+              border: `1px solid ${activeCategory === cat.id ? 'var(--accent)' : 'var(--border)'}`,
+              transition: 'all 0.15s',
+              fontWeight: activeCategory === cat.id ? 600 : 400,
+            }}>
+            {cat.icon} {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search bar */}
+      <div style={{ marginBottom: 20 }}>
+        <input
+          type="text"
+          placeholder="🔍  Search by title, skill, or company…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 480 }}
+        />
+      </div>
+
+      <div className="jobs-layout">
+        {/* FILTERS SIDEBAR */}
+        <aside className="filters-panel">
+          {user?.skills?.length > 0 && (
+            <div className="filter-section">
+              <h4>AI Features</h4>
+              <label className="filter-option">
+                <input type="checkbox" checked={aiSort} onChange={e => setAiSort(e.target.checked)} />
+                Sort by AI Match Score
+              </label>
+            </div>
+          )}
+
+          <div className="filter-section">
+            <h4>Job Type</h4>
+            <div className="filter-options">
+              {TYPES.map(t => (
+                <label key={t} className="filter-option">
+                  <input type="checkbox" checked={filterTypes.includes(t)} onChange={() => toggle(filterTypes, setFilterTypes, t)} />
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-section">
+            <h4>Experience Level</h4>
+            <div className="filter-options">
+              {LEVELS.map(l => (
+                <label key={l} className="filter-option">
+                  <input type="checkbox" checked={filterLevels.includes(l)} onChange={() => toggle(filterLevels, setFilterLevels, l)} />
+                  {l.charAt(0).toUpperCase() + l.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {hasFilters && (
+            <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={clearAll}>
+              Clear All Filters
+            </button>
+          )}
+        </aside>
+
+        {/* JOBS LIST */}
+        <div>
+          {loadingJobs ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, height: 140 }}>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                    <div className="skeleton" style={{ width: 44, height: 44, borderRadius: 10 }} />
+                    <div style={{ flex: 1 }}>
+                      <div className="skeleton" style={{ height: 15, width: '45%', marginBottom: 8 }} />
+                      <div className="skeleton" style={{ height: 12, width: '28%' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: 14, width: 80 }} />
+                  </div>
+                  <div className="skeleton" style={{ height: 10, width: '65%', marginBottom: 6 }} />
+                  <div className="skeleton" style={{ height: 10, width: '40%' }} />
+                </div>
+              ))}
+            </div>
+          ) : filteredJobs.length === 0 ? (
+            <div className="no-jobs">
+              <div className="emoji">🔍</div>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>No verified jobs found</div>
+              <div style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 16 }}>
+                {jobs.length === 0
+                  ? 'Jobs are being synced from our API. Try refreshing in a moment.'
+                  : 'Try a different category, search term, or clear your filters.'}
+              </div>
+              {hasFilters && (
+                <button className="btn btn-outline btn-sm" onClick={clearAll}>Clear Filters</button>
+              )}
+            </div>
+          ) : (
+            <div className="jobs-list">
+              {filteredJobs.map(job => (
+                <div key={job._id || job.id} style={{ position: 'relative' }}>
+                  {/* Verified API badge — sits above the card */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '2px 8px', marginBottom: 4,
+                    background: 'rgba(16,185,129,0.08)',
+                    border: '1px solid rgba(16,185,129,0.18)',
+                    borderRadius: '6px 6px 0 0',
+                    fontSize: 11, fontWeight: 600,
+                    color: 'var(--green)',
+                  }}>
+                    ✓ Verified API Job
+                  </div>
+                  <JobCard
+                    job={job}
+                    onClick={setSelected}
+                    matchScore={job.matchScore}
+                    showMatch={aiSort && !!user?.skills?.length}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedJob && <JobModal job={selectedJob} onClose={() => setSelected(null)} />}
     </div>
   );
 }
