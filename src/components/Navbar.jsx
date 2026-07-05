@@ -17,6 +17,7 @@ export default function Navbar() {
           <NavLink to="/" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')} end>Home</NavLink>
           <NavLink to="/jobs" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Jobs</NavLink>
           {user && <NavLink to="/profile" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Profile</NavLink>}
+          {user && <NavLink to="/resume-builder" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Resume Builder</NavLink>}
         </div>
 
         <div className="nav-actions">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getCareerSuggestions, rankJobsByMatch, getMatchLabel } from '../utils/matching';
 import { jobsAPI, cvAPI } from '../services/api';
 
@@ -281,12 +281,15 @@ function CVPanel() {
   return (
     <div className="card dash-grid-full">
       <div className="card-header">
-        <div className="card-title"><div className="card-icon">📄</div>AI CV Reviewer</div>
-        {result && (
-          <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCvText(''); }}>
-            Start Over
-          </button>
-        )}
+        <div className="card-title"><div className="card-icon">📄</div>AI Resume Analyzer</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="/resume-builder" className="btn btn-outline btn-sm">✍️ Build My Resume</Link>
+          {result && (
+            <button className="btn btn-ghost btn-sm" onClick={() => { setResult(null); setCvText(''); }}>
+              Start Over
+            </button>
+          )}
+        </div>
       </div>
 
       {!result ? (
@@ -301,7 +304,7 @@ function CVPanel() {
           </div>
           {error && <p style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <button className="btn btn-primary" onClick={analyze} disabled={loading || cvText.trim().length < 10}>
-            {loading ? '🔍 Analyzing your CV…' : '🤖 Analyze My CV'}
+            {loading ? '🔍 Analyzing your resume…' : '🤖 Analyze My Resume'}
           </button>
         </>
       ) : (
@@ -374,7 +377,7 @@ const TABS = [
   { id: 'overview',  label: 'Overview',  icon: '⚡' },
   { id: 'skills',    label: 'Skills',    icon: '🛠' },
   { id: 'roadmap',   label: 'Roadmap',   icon: '🗺' },
-  { id: 'cv',        label: 'CV Review', icon: '📄' },
+  { id: 'cv',        label: 'Resume Analysis', icon: '📄' },
 ];
 
 export default function Profile() {
@@ -420,7 +423,7 @@ export default function Profile() {
           { icon: '🛠', iconBg: 'rgba(99,102,241,0.15)', value: skillsCount,      label: 'Skills Added',    color: 'var(--accent2)' },
           { icon: '🎯', iconBg: 'rgba(16,185,129,0.15)',  value: `${topScore}%`,  label: 'Top Job Match',   color: 'var(--green)' },
           { icon: '💼', iconBg: 'rgba(245,158,11,0.15)',  value: jobs.length,     label: 'Jobs Available',  color: 'var(--yellow)' },
-          { icon: '📄', iconBg: 'rgba(236,72,153,0.15)',  value: skillsCount > 0 ? 'Ready' : 'Pending', label: 'CV Status', color: 'var(--pink)' },
+          { icon: '📄', iconBg: 'rgba(236,72,153,0.15)',  value: skillsCount > 0 ? 'Ready' : 'Pending', label: 'Resume Status', color: 'var(--pink)' },
         ].map((s, i) => (
           <div key={i} className="dash-stat">
             <div className="dash-stat-icon" style={{ background: s.iconBg }}>{s.icon}</div>

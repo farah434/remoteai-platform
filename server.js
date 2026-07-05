@@ -4,7 +4,6 @@
 //  Phase 5: AI Matching + Mentor + CV Review
 //  Phase 6: Real AI Integration (Google Gemini)
 // ══════════════════════════════════════════════
-
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -37,10 +36,11 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '2mb' }));
-
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'remoteai_dev_secret';
-const MONGO_URI = process.env.MONGO_URI;
+
+const MONGO_URI = process.env.MONGODB_URI;
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = 'gemini-2.0-flash';
 
@@ -97,6 +97,7 @@ const userSchema = new mongoose.Schema({
   skills: [String],
   experience: { type: String, default: '' },    // e.g. "2 years"
   targetRole: { type: String, default: '' },     // e.g. "Full Stack Developer"
+  resume: { type: mongoose.Schema.Types.Mixed, default: null }, // AI Resume Builder data
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -193,6 +194,21 @@ app.put('/api/auth/profile', auth, async (req, res) => {
     if (experience !== undefined) update.experience = experience;
     if (targetRole !== undefined) update.targetRole = targetRole;
     const user = await User.findByIdAndUpdate(req.user.id, update, { new: true }).select('-password');
+    res.json(user);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ══════════════════════════════════════════════
+//  AI RESUME BUILDER — save resume data to profile
+// ══════════════════════════════════════════════
+
+app.put('/api/resume', auth, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { resume: req.body.resume ?? null },
+      { new: true }
+    ).select('-password');
     res.json(user);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

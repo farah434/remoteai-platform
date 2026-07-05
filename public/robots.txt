@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
+
+# Auth/dashboard pages are functional, not content — kept out of the index
+# via per-page noindex meta tags (see src/pages/Login.jsx, Signup.jsx,
+# Profile.jsx). Disallowing them here as well is optional but harmless.
+Disallow: /login
+Disallow: /signup
+Disallow: /profile
+
 Sitemap: https://remoteai-platform.vercel.app/sitemap.xml

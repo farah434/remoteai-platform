@@ -17,9 +17,11 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^2.5.2",
     "mongoose": "^9.7.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-helmet-async": "^3.0.0",
     "react-router-dom": "^7.18.0"
   },
   "devDependencies": {

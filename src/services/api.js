@@ -3,8 +3,8 @@
 //  All backend HTTP calls go through here
 // ══════════════════════════════════════════════
 
-const BASE = 'https://remoteai-platform-production.up.railway.app/api';
-
+// const BASE = 'https://remoteai-platform-production.up.railway.app/api';
+const BASE = import.meta.env.VITE_API_URL + '/api';
 // ── TOKEN HELPERS ─────────────────────────────
 export const getToken = () => localStorage.getItem('remoteai_token');
 export const setToken = (t) => localStorage.setItem('remoteai_token', t);
@@ -68,11 +68,29 @@ export const mentorAPI = {
     }).then(handle),
 };
 
-// ── CV REVIEWER ───────────────────────────────
+// ── AI RESUME ANALYZER (formerly "CV Reviewer") ─
 export const cvAPI = {
   review: (cvText) =>
     fetch(`${BASE}/cv/review`, {
       method: 'POST', headers: headers(),
       body: JSON.stringify({ cvText }),
+    }).then(handle),
+};
+
+// ── RESUME BUILDER ─────────────────────────────
+// Saves/loads the structured resume JSON on the logged-in user's profile.
+// save() requires the server.js patch (adds `resume` field + PUT route).
+// get() reuses the existing /api/auth/me route — no extra backend route
+// needed, since /api/auth/me already returns the full user document.
+// If either call fails (offline, old backend, etc.) callers fall back
+// to localStorage — see AuthContext.jsx / ResumeBuilder.jsx.
+export const resumeAPI = {
+  get: () =>
+    fetch(`${BASE}/auth/me`, { headers: headers() }).then(handle).then(u => u.resume || null),
+
+  save: (resume) =>
+    fetch(`${BASE}/resume`, {
+      method: 'PUT', headers: headers(),
+      body: JSON.stringify({ resume }),
     }).then(handle),
 };
