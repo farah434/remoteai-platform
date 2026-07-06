@@ -49,15 +49,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section style={{ padding: '40px 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+      <section className="section-container">
+        <div className="feature-grid">
           {[
             { icon: '🎯', title: 'AI Match Score', desc: 'See how well your skills match each job — instantly.' },
             { icon: '🔍', title: 'Smart Filters', desc: 'Filter by level, type, or required skills in seconds.' },
             { icon: '📈', title: 'Skill Gap Analysis', desc: "Know exactly what's missing before you apply." },
             { icon: '🤖', title: 'Career Mentor AI', desc: 'Chat with our AI mentor for personalized roadmaps.' },
           ].map(f => (
-            <div key={f.title} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
+            <div key={f.title} className="feature-card">
               <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>{f.title}</div>
               <div style={{ fontSize: 14, color: 'var(--text2)' }}>{f.desc}</div>
