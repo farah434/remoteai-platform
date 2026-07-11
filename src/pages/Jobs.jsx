@@ -2,47 +2,76 @@ import { useState, useMemo, useEffect } from 'react';
 import JobCard from '../components/JobCard';
 import JobModal from '../components/JobModal';
 import { useAuth } from '../context/AuthContext';
-import { jobsAPI } from '../services/api';
+import { jobsAPI, categoriesAPI } from '../services/api';
 import { rankJobsByMatch } from '../utils/matching';
 
 const TYPES  = ['full-time', 'part-time', 'contract', 'freelance'];
 const LEVELS = ['beginner', 'mid', 'senior'];
 
-const CATEGORIES = [
-  { id: 'all',              label: 'All Categories',    icon: '🌐' },
-  { id: 'software-dev',     label: 'Software Dev',      icon: '💻' },
-  { id: 'ai-data',          label: 'AI & Data',         icon: '🤖' },
-  { id: 'design',           label: 'Design',            icon: '🎨' },
-  { id: 'devops',           label: 'DevOps',            icon: '⚙️' },
-  { id: 'writing',          label: 'Writing',           icon: '✍️' },
-  { id: 'marketing',        label: 'Marketing',         icon: '📣' },
-  { id: 'customer-support', label: 'Support',           icon: '💬' },
-  { id: 'virtual-assistant',label: 'Virtual Assistant', icon: '🗂' },
-  { id: 'sales',            label: 'Sales',             icon: '📈' },
-  { id: 'finance',          label: 'Finance',           icon: '💰' },
-  { id: 'education',        label: 'Education',         icon: '📚' },
-  { id: 'qa-testing',       label: 'QA & Testing',      icon: '🧪' },
-  { id: 'cybersecurity',    label: 'Security',          icon: '🔐' },
-  { id: 'product',          label: 'Product',           icon: '📦' },
+// Used only if GET /api/categories fails — keeps the pills usable offline.
+const FALLBACK_CATEGORIES = [
+  { slug: 'software-dev',     label: 'Software Dev',     jobCount: 0 },
+  { slug: 'ai-data',          label: 'AI & Data',        jobCount: 0 },
+  { slug: 'design',           label: 'Design',           jobCount: 0 },
+  { slug: 'devops',           label: 'DevOps',           jobCount: 0 },
+  { slug: 'writing',          label: 'Writing',          jobCount: 0 },
+  { slug: 'marketing',        label: 'Marketing',        jobCount: 0 },
+  { slug: 'customer-support', label: 'Support',          jobCount: 0 },
+  { slug: 'sales',            label: 'Sales',            jobCount: 0 },
 ];
 
-// Client-side category keyword map mirrors the backend's CATEGORY_KEYWORDS
-const CAT_KEYWORDS = {
-  'software-dev':    ['developer','engineer','software','fullstack','backend','frontend','node','react','python','java','ruby','golang','php','typescript'],
-  'ai-data':         ['data','analyst','machine learning','ai','ml','data science','nlp','analytics','tensorflow'],
-  'design':          ['design','ux','ui','figma','graphic','motion','visual'],
-  'writing':         ['writer','content','copywriter','editor','technical writer','documentation','blog'],
-  'marketing':       ['marketing','growth','seo','social media','email marketing','brand','campaign','ads','ppc'],
-  'customer-support':['support','customer success','customer service','helpdesk','zendesk'],
-  'virtual-assistant':['virtual assistant','executive assistant','administrative','admin'],
-  'sales':           ['sales','account executive','business development','bdr','sdr','revenue'],
-  'finance':         ['finance','accounting','bookkeeper','financial analyst','tax'],
-  'education':       ['teacher','tutor','instructor','education','elearning','curriculum'],
-  'devops':          ['devops','sre','infrastructure','cloud','aws','kubernetes','docker','platform engineer'],
-  'qa-testing':      ['qa','quality assurance','tester','test engineer','automation test','sdet'],
-  'product':         ['product manager','product owner','scrum','agile','pm'],
-  'cybersecurity':   ['security','infosec','penetration','soc','cybersecurity'],
-};
+// Best-effort emoji per category — matched by keyword against slug/label so
+// it works for any slug the backend returns, not just a fixed list.
+const ICON_RULES = [
+  [/front.?end|react|vue|angular|css|html/, '🖥️'],
+  [/back.?end|api|server|django|rails|spring|node/, '🗄️'],
+  [/full.?stack/, '💻'],
+  [/software|developer|engineer/, '💻'],
+  [/mobile|ios|android|flutter|swift|kotlin/, '📱'],
+  [/ai|artificial intelligence|machine learning|ml\b|data science|llm|genai/, '🤖'],
+  [/data engineer|data pipeline|etl|warehouse/, '🗃️'],
+  [/^data|analyst|analytics/, '📊'],
+  [/ux/, '🧭'],
+  [/ui|interface/, '🎛️'],
+  [/graphic/, '🖌️'],
+  [/design/, '🎨'],
+  [/devops|sre|infrastructure|platform engineer/, '⚙️'],
+  [/cloud|aws|azure|gcp/, '☁️'],
+  [/blockchain|web3|crypto|nft|dao|solidity/, '⛓️'],
+  [/game/, '🎮'],
+  [/security|infosec|cyber|penetration|soc/, '🔐'],
+  [/network/, '📡'],
+  [/database|dba/, '🗂️'],
+  [/writ|content|copy|editor|documentation|blog/, '✍️'],
+  [/seo/, '🔎'],
+  [/social media|community/, '📱'],
+  [/marketing|growth|brand|campaign|ads|ppc/, '📣'],
+  [/support|helpdesk|zendesk|it support/, '💬'],
+  [/virtual assistant|executive assistant|admin/, '🗂'],
+  [/sales|business development|account executive|bdr|sdr/, '📈'],
+  [/finance|accounting|bookkeep|tax/, '💰'],
+  [/education|teacher|tutor|instructor|curriculum/, '📚'],
+  [/qa|quality assurance|tester|test engineer|sdet/, '🧪'],
+  [/product/, '📦'],
+  [/hr|human resources|people operations/, '🧑\u200d💼'],
+  [/recruit|talent acquisition/, '🧲'],
+  [/ecommerce|e-commerce|shopify|marketplace/, '🛒'],
+  [/operations|logistics/, '🧰'],
+  [/healthcare|nurse|clinical|medical|telehealth/, '🩺'],
+  [/legal|attorney|paralegal|compliance/, '⚖️'],
+  [/translat|localization|interpreter/, '🌐'],
+  [/video|motion graphics|premiere|after effects/, '🎬'],
+  [/no-code|no code|low-code|low code|bubble\.io|webflow/, '🧩'],
+  [/project management|program manager|pmp/, '🗓️'],
+];
+
+function getCategoryIcon(slug = '', label = '') {
+  const haystack = `${slug} ${label}`.toLowerCase();
+  for (const [pattern, icon] of ICON_RULES) {
+    if (pattern.test(haystack)) return icon;
+  }
+  return '🏷️';
+}
 
 export default function Jobs() {
   const { user } = useAuth();
@@ -56,10 +85,18 @@ export default function Jobs() {
   const [aiSort, setAiSort]         = useState(!!user?.skills?.length);
   const [syncStatus, setSyncStatus] = useState(null); // { apiJobs, lastSynced }
 
+  const [categories, setCategories]           = useState([]);
+  const [categoriesLoading, setCategoriesLoad] = useState(true);
+  const [categoriesError, setCategoriesError]  = useState(false);
+
+  // Jobs are re-fetched from the server whenever the active category
+  // changes — /api/jobs?category=<slug> already applies the exact same
+  // keyword matching the backend uses for GET /api/categories, so this
+  // stays correct for every dynamic category the API returns (not just a
+  // fixed client-side list).
   useEffect(() => {
     setLoading(true);
-    // Fetch API jobs only — backend already filters source:'api'
-    jobsAPI.list()
+    jobsAPI.list(activeCategory !== 'all' ? { category: activeCategory } : {})
       .then(data => {
         // Client-side double-guard: only show jobs with a real externalId and applyUrl
         const verified = (data || []).filter(j => j.source === 'api' && j.externalId && j.applyUrl);
@@ -70,12 +107,28 @@ export default function Jobs() {
         setJobs([]);
       })
       .finally(() => setLoading(false));
+  }, [activeCategory]);
 
-    // Fetch sync status for the banner
+  // Sync-status banner — independent of category, fetched once.
+  useEffect(() => {
     fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/jobs/sync-status')
       .then(r => r.json())
       .then(d => setSyncStatus(d))
       .catch(() => {});
+  }, []);
+
+  // Dynamic categories for the pill bar.
+  useEffect(() => {
+    setCategoriesLoad(true);
+    setCategoriesError(false);
+    categoriesAPI.list()
+      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error('Failed to load categories:', err);
+        setCategories(FALLBACK_CATEGORIES);
+        setCategoriesError(true);
+      })
+      .finally(() => setCategoriesLoad(false));
   }, []);
 
   const toggle = (arr, setArr, val) =>
@@ -84,16 +137,9 @@ export default function Jobs() {
   const filteredJobs = useMemo(() => {
     let list = [...jobs];
 
-    // Category filter (client-side, matches backend logic)
-    if (activeCategory !== 'all') {
-      const kws = CAT_KEYWORDS[activeCategory] || [];
-      if (kws.length > 0) {
-        list = list.filter(j => {
-          const haystack = `${j.title} ${(j.tags || []).join(' ')} ${(j.skills || []).join(' ')}`.toLowerCase();
-          return kws.some(kw => haystack.includes(kw));
-        });
-      }
-    }
+    // Category filtering now happens server-side (jobs are re-fetched with
+    // ?category=<slug> whenever activeCategory changes), so `jobs` here is
+    // already scoped to the active category.
 
     if (search) {
       const q = search.toLowerCase();
@@ -130,7 +176,7 @@ export default function Jobs() {
         <p className="page-sub">
           {loadingJobs
             ? 'Loading verified jobs…'
-            : `${filteredJobs.length} verified remote jobs${activeCategory !== 'all' ? ` in ${CATEGORIES.find(c => c.id === activeCategory)?.label}` : ''}`}
+            : `${filteredJobs.length} verified remote jobs${activeCategory !== 'all' ? ` in ${categories.find(c => c.slug === activeCategory)?.label || ''}` : ''}`}
           {user?.skills?.length && aiSort ? ' — sorted by AI match score' : ''}
         </p>
       </div>
@@ -160,26 +206,68 @@ export default function Jobs() {
       {/* Category pills */}
       <div style={{
         display: 'flex', gap: 6, flexWrap: 'wrap',
-        marginBottom: 20, paddingBottom: 16,
+        marginBottom: 8, paddingBottom: 16,
         borderBottom: '1px solid var(--border)',
       }}>
-        {CATEGORIES.map(cat => (
-          <button key={cat.id}
-            onClick={() => setCategory(cat.id)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '5px 12px', borderRadius: 99, fontSize: 13,
-              cursor: 'pointer',
-              background: activeCategory === cat.id ? 'var(--accent)' : 'var(--bg2)',
-              color:      activeCategory === cat.id ? 'white' : 'var(--text2)',
-              border: `1px solid ${activeCategory === cat.id ? 'var(--accent)' : 'var(--border)'}`,
-              transition: 'all 0.15s',
-              fontWeight: activeCategory === cat.id ? 600 : 400,
-            }}>
-            {cat.icon} {cat.label}
-          </button>
-        ))}
+        {categoriesLoading ? (
+          [1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="skeleton" style={{ width: 90 + (i % 3) * 20, height: 28, borderRadius: 99 }} />
+          ))
+        ) : (
+          <>
+            {/* "All Categories" is always available regardless of what the API returns */}
+            <button
+              onClick={() => setCategory('all')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 99, fontSize: 13,
+                cursor: 'pointer',
+                background: activeCategory === 'all' ? 'var(--accent)' : 'var(--bg2)',
+                color:      activeCategory === 'all' ? 'white' : 'var(--text2)',
+                border: `1px solid ${activeCategory === 'all' ? 'var(--accent)' : 'var(--border)'}`,
+                transition: 'all 0.15s',
+                fontWeight: activeCategory === 'all' ? 600 : 400,
+              }}>
+              🌐 All Categories
+            </button>
+
+            {categories.map(cat => (
+              <button key={cat.slug}
+                onClick={() => setCategory(cat.slug)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '5px 12px', borderRadius: 99, fontSize: 13,
+                  cursor: 'pointer',
+                  background: activeCategory === cat.slug ? 'var(--accent)' : 'var(--bg2)',
+                  color:      activeCategory === cat.slug ? 'white' : 'var(--text2)',
+                  border: `1px solid ${activeCategory === cat.slug ? 'var(--accent)' : 'var(--border)'}`,
+                  transition: 'all 0.15s',
+                  fontWeight: activeCategory === cat.slug ? 600 : 400,
+                }}>
+                {getCategoryIcon(cat.slug, cat.label)} {cat.label}
+                {typeof cat.jobCount === 'number' && cat.jobCount > 0 && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    padding: '1px 6px', borderRadius: 99,
+                    background: activeCategory === cat.slug ? 'rgba(255,255,255,0.25)' : 'var(--bg3)',
+                    color: activeCategory === cat.slug ? 'white' : 'var(--text3)',
+                  }}>
+                    {cat.jobCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </>
+        )}
       </div>
+
+      {categoriesError ? (
+        <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: -4, marginBottom: 20 }}>
+          Couldn't load live categories — showing a default list instead.
+        </p>
+      ) : (
+        <div style={{ marginBottom: 20 }} />
+      )}
 
       {/* Search bar */}
       <div style={{ marginBottom: 20 }}>
