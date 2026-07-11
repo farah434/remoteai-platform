@@ -77,7 +77,26 @@ export const cvAPI = {
     }).then(handle),
 };
 
-// ── RESUME BUILDER ─────────────────────────────
+// ── SEO: CATEGORIES ────────────────────────────
+export const categoriesAPI = {
+  list: () =>
+    fetch(`${BASE}/categories`, { headers: headers() }).then(handle),
+
+  get: (slug, { page = 1, limit = 20 } = {}) =>
+    fetch(`${BASE}/categories/${encodeURIComponent(slug)}?page=${page}&limit=${limit}`, { headers: headers() }).then(handle),
+};
+
+// ── SEO: COMPANIES ─────────────────────────────
+export const companiesAPI = {
+  list: ({ page = 1, limit = 30, search = '' } = {}) => {
+    const q = new URLSearchParams({ page, limit, ...(search ? { search } : {}) }).toString();
+    return fetch(`${BASE}/companies?${q}`, { headers: headers() }).then(handle);
+  },
+
+  get: (slug) =>
+    fetch(`${BASE}/companies/${encodeURIComponent(slug)}`, { headers: headers() }).then(handle),
+};
+
 // Saves/loads the structured resume JSON on the logged-in user's profile.
 // save() requires the server.js patch (adds `resume` field + PUT route).
 // get() reuses the existing /api/auth/me route — no extra backend route

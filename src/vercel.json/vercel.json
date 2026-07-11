@@ -1,7 +1,15 @@
 {
   "rewrites": [
     {
-      "source": "/((?!sitemap\\.xml|robots\\.txt|favicon\\.svg).*)",
+      "source": "/sitemap.xml",
+      "destination": "https://remoteai-platform-production.up.railway.app/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://remoteai-platform-production.up.railway.app/robots.txt"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/"
     }
   ],
