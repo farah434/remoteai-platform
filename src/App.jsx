@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import Chatbot from './components/Chatbot';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
+import CategoryPage from './pages/CategoryPage';
+import CompanyPage from './pages/CompanyPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
@@ -82,6 +84,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/category/:slug" element={<CategoryPage />} />
+          <Route path="/company/:slug" element={<CompanyPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/profile" element={<Profile />} />
