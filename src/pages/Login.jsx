@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -25,6 +26,7 @@ export default function Login() {
 
   return (
     <div className="auth-page">
+      <SEO title="Login" description="Log in to RemoteAI to see your AI job matches." noIndex />
       <div className="auth-card">
         <h2>Welcome back</h2>
         <p className="auth-sub">Login to see your AI job matches</p>

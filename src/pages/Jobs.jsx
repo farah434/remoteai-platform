@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import SEO from '../components/SEO';
 import JobCard from '../components/JobCard';
 import JobModal from '../components/JobModal';
 import { useAuth } from '../context/AuthContext';
@@ -170,6 +171,12 @@ export default function Jobs() {
 
   return (
     <div className="page">
+      <SEO
+        title="Remote Jobs"
+        description="Browse 500+ verified remote jobs."
+        canonical="https://remoteai-platform.vercel.app/jobs"
+      />
+
       {/* Page header */}
       <div style={{ marginBottom: 20 }}>
         <h1 className="page-title">Remote Jobs</h1>

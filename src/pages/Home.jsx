@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import JobCard from '../components/JobCard';
 import { useAuth } from '../context/AuthContext';
 import { jobsAPI } from '../services/api';
@@ -23,6 +24,13 @@ export default function Home() {
 
   return (
     <>
+      <SEO
+        title="RemoteAI - AI Powered Remote Jobs Platform"
+        rawTitle
+        description="Find 500+ verified remote jobs with AI-powered matching."
+        canonical="https://remoteai-platform.vercel.app/"
+      />
+
       <section className="hero">
         <div className="hero-tag">✦ AI-Powered Job Matching</div>
         <h1>

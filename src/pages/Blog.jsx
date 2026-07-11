@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { blogPosts } from '../data/blogPosts';
 
 const ALL_CATEGORIES = ['All', ...new Set(blogPosts.map(p => p.category))];
@@ -17,6 +18,11 @@ export default function Blog() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80 }}>
+      <SEO
+        title="Blog"
+        description="Career advice, remote work tips, and AI job-search strategies from the RemoteAI team."
+        canonical="/blog"
+      />
 
       {/* Header */}
       <section style={{

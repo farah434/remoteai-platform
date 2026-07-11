@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { blogPosts } from '../data/blogPosts';
 
 export default function BlogPost() {
@@ -9,6 +10,7 @@ export default function BlogPost() {
   if (!post) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, textAlign: 'center', padding: '80px 24px' }}>
+        <SEO title="Post Not Found" noIndex />
         <div style={{ fontSize: 60 }}>📭</div>
         <h2 style={{ fontSize: 24, fontWeight: 700 }}>Post not found</h2>
         <p style={{ color: '#64748b' }}>This article doesn't exist or may have moved.</p>
@@ -92,6 +94,20 @@ export default function BlogPost() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80 }}>
+      <SEO
+        title={post.title}
+        description={post.excerpt}
+        canonical={`/blog/${post.slug}`}
+        type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description: post.excerpt,
+          datePublished: post.date,
+          keywords: (post.tags || []).join(', '),
+        }}
+      />
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px 80px' }}>
 
         {/* Back */}

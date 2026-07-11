@@ -1,3 +1,5 @@
+import SEO from '../components/SEO';
+
 export default function PrivacyPolicy() {
   const updated = 'June 29, 2026';
 
@@ -10,6 +12,11 @@ export default function PrivacyPolicy() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80 }}>
+      <SEO
+        title="Privacy Policy"
+        description="How RemoteAI collects, uses, and protects your data."
+        canonical="/privacy-policy"
+      />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px 80px' }}>
 
         {/* Header */}

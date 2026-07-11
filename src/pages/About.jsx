@@ -1,3 +1,5 @@
+import SEO from '../components/SEO';
+
 export default function About() {
   const stats = [
     { value: '10,000+', label: 'Remote Jobs Listed' },
@@ -35,6 +37,11 @@ export default function About() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80 }}>
+      <SEO
+        title="About Us"
+        description="RemoteAI connects developers worldwide with verified remote jobs through AI-powered skill matching and career mentoring."
+        canonical="/about"
+      />
 
       {/* Hero */}
       <section style={{

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { getCareerSuggestions, rankJobsByMatch, getMatchLabel } from '../utils/matching';
@@ -399,6 +400,7 @@ export default function Profile() {
 
   return (
     <div className="page">
+      <SEO title="Dashboard" description="Your RemoteAI dashboard — skills, AI job matches, and career roadmap." noIndex />
 
       {/* ── Dashboard Hero ── */}
       <div className="dash-hero">

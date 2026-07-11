@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 import JobCard from '../components/JobCard';
 import JobModal from '../components/JobModal';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -38,10 +38,7 @@ export default function CategoryPage() {
   if (notFound) {
     return (
       <div className="page">
-        <Helmet>
-          <title>Category Not Found | RemoteAI</title>
-          <meta name="robots" content="noindex, follow" />
-        </Helmet>
+        <SEO title="Category Not Found" noIndex />
         <div className="no-jobs">
           <div className="emoji">🔍</div>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Category not found</div>
@@ -83,16 +80,12 @@ export default function CategoryPage() {
 
   return (
     <div className="page">
-      <Helmet>
-        <title>{`${jobCount} Remote ${label} Jobs — Apply Now | RemoteAI`}</title>
-        <meta name="description" content={metaDescription} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={`Remote ${label} Jobs | RemoteAI`} />
-        <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
-      </Helmet>
+      <SEO
+        title={`${jobCount} Remote ${label} Jobs — Apply Now`}
+        description={metaDescription}
+        canonical={canonicalUrl}
+        jsonLd={jsonLd || undefined}
+      />
 
       <Breadcrumbs
         siteUrl={siteUrl}

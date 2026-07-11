@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
 import { useAuth } from '../context/AuthContext';
 import { generateSummary, improveBullet } from '../utils/resumeAI';
 import { downloadResumePDF } from '../utils/pdfExport';
@@ -200,6 +201,11 @@ export default function ResumeBuilder() {
   if (!user) {
     return (
       <div className="page">
+        <SEO
+          title="AI Resume Builder"
+          description="Build a professional developer resume with AI-assisted wording and export it as a PDF — free with RemoteAI."
+          canonical="/resume-builder"
+        />
         <div className="page-title">✍️ AI Resume Builder</div>
         <div className="card" style={{ maxWidth: 480 }}>
           <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 14 }}>
@@ -215,6 +221,11 @@ export default function ResumeBuilder() {
 
   return (
     <div className="page">
+      <SEO
+        title="AI Resume Builder"
+        description="Build a professional developer resume with AI-assisted wording and export it as a PDF — free with RemoteAI."
+        canonical="/resume-builder"
+      />
       <div className="page-title">✍️ AI Resume Builder</div>
       <p className="page-sub">Build a professional developer resume, get AI-assisted wording, and export it as a PDF.</p>
 

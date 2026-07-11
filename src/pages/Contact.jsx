@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SEO from '../components/SEO';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -36,6 +37,11 @@ export default function Contact() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: 80 }}>
+      <SEO
+        title="Contact Us"
+        description="Get in touch with the RemoteAI team — questions, feedback, or employer inquiries."
+        canonical="/contact"
+      />
 
       {/* Header */}
       <section style={{

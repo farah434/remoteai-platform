@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import SEO from '../components/SEO';
 import JobCard from '../components/JobCard';
 import JobModal from '../components/JobModal';
 import Breadcrumbs from '../components/Breadcrumbs';
@@ -30,10 +30,7 @@ export default function CompanyPage() {
   if (notFound) {
     return (
       <div className="page">
-        <Helmet>
-          <title>Company Not Found | RemoteAI</title>
-          <meta name="robots" content="noindex, follow" />
-        </Helmet>
+        <SEO title="Company Not Found" noIndex />
         <div className="no-jobs">
           <div className="emoji">🔍</div>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Company not found</div>
@@ -86,17 +83,13 @@ export default function CompanyPage() {
 
   return (
     <div className="page">
-      <Helmet>
-        <title>{`${data.name} Remote Jobs — ${data.openJobs} Open Positions | RemoteAI`}</title>
-        <meta name="description" content={metaDescription} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={`${data.name} Remote Jobs | RemoteAI`} />
-        <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        {data.logo && <meta property="og:image" content={data.logo} />}
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      <SEO
+        title={`${data.name} Remote Jobs — ${data.openJobs} Open Positions`}
+        description={metaDescription}
+        canonical={canonicalUrl}
+        image={data.logo && /^https?:\/\//.test(data.logo) ? data.logo : undefined}
+        jsonLd={jsonLd}
+      />
 
       <Breadcrumbs
         siteUrl={siteUrl}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useAuth } from '../context/AuthContext';
 import { parseSkillsInput } from '../utils/matching';
 import { skillCategories } from '../data/jobs';
@@ -34,6 +35,7 @@ export default function Signup() {
 
   if (step === 2) return (
     <div className="auth-page">
+      <SEO title="Sign Up" description="Create your free RemoteAI account and get AI-powered job matches." canonical="/signup" noIndex />
       <div className="auth-card" style={{ maxWidth: 520 }}>
         <h2>Add Your Skills</h2>
         <p className="auth-sub">So AI can match you with the best jobs</p>
@@ -77,6 +79,7 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
+      <SEO title="Sign Up" description="Create your free RemoteAI account and get AI-powered job matches." canonical="/signup" noIndex />
       <div className="auth-card">
         <h2>Create Account</h2>
         <p className="auth-sub">Join thousands of remote workers</p>
